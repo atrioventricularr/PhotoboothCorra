@@ -127,10 +127,13 @@
                 
                 const div = document.createElement('div');
                 div.className = 'item';
+                
+                // PERUBAHAN ADA DI SINI: Jika gambar gagal load, ganti dengan tulisan, tombol download tetap ada
                 div.innerHTML = `
-                    <img src="${url}" alt="${label}" onerror="this.parentElement.style.display='none'">
+                    <img src="${url}" alt="${label}" onerror="this.src='https://via.placeholder.com/500x350/f8f9fa/a0aec0?text=Preview+Gambar+Lambat'; this.onerror=null;">
                     <a href="${url}" target="_blank" download class="btn">Download ${label}</a>
                 `;
+                
                 gallery.appendChild(div);
                 return true;
             };
