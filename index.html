@@ -105,60 +105,72 @@
     </div>
 
     <script>
-        window.onload = () => {
-            const params = new URLSearchParams(window.location.search);
-            const gallery = document.getElementById('gallery');
-            const statusMsg = document.getElementById('status-msg');
-            
-            // Ambil data dari URL
-            const brand = params.get('brand');
-            const frame = params.get('frame');
-            const gif = params.get('gif');
-            const raws = params.get('raws') ? params.get('raws').split(',') : [];
+       window.onload = () => {
+    const params = new URLSearchParams(window.location.search);
+    const sid = params.get('sid');
+    const brand = params.get('brand');
+    const rawsCount = parseInt(params.get('raws') || "0");
 
-            // Update Judul Brand
-            if (brand) {
-                document.getElementById('brand-title').innerText = decodeURIComponent(brand).toUpperCase();
-            }
+    if (brand) document.getElementById('brand-title').innerText = decodeURIComponent(brand).toUpperCase();
 
-            // Fungsi membuat elemen gambar & tombol
-            const renderItem = (url, label) => {
-                if (!url || url === "" || url === "null") return false;
-                
-                const div = document.createElement('div');
-                div.className = 'item';
-                
-                // PERUBAHAN ADA DI SINI: Jika gambar gagal load, ganti dengan tulisan, tombol download tetap ada
-                div.innerHTML = `
-                    <img src="${url}" alt="${label}" onerror="this.src='https://via.placeholder.com/500x350/f8f9fa/a0aec0?text=Preview+Gambar+Lambat'; this.onerror=null;">
-                    <a href="${url}" target="_blank" download class="btn">Download ${label}</a>
-                `;
-                
-                gallery.appendChild(div);
-                return true;
-            };
+    // JIKA TIDAK ADA SID (Seperti di screenshot kamu)
+    if (!sid) {
+        document.getElementById('loading-screen').innerHTML = "<p style='color:#e74c3c;'>Harap scan QR Code dari aplikasi Photobooth untuk melihat foto.</p>";
+        return;
+    }
 
-            // Bersihkan pesan loading
-            let hasContent = false;
+    // CARA AMAN MENDAPATKAN BASE URL
+    const baseUrl = window.location.origin + window.location.pathname.replace('index.html', '');
+    
+    // Alamat gambar
+    const frameUrl = `${baseUrl}sessions/${sid}/frame.png`;
+    const gifUrl = `${baseUrl}sessions/${sid}/gif.gif`;
+    const rawUrls = [];
+    for(let i=1; i<=rawsCount; i++) {
+        rawUrls.push(`${baseUrl}sessions/${sid}/raw-${i}.png`);
+    }
 
-            // 1. Tampilkan GIF (Paling Atas)
-            if(renderItem(gif, 'GIF Animation')) hasContent = true;
+    const loadingScreen = document.getElementById('loading-screen');
+    const gallery = document.getElementById('gallery');
 
-            // 2. Tampilkan Frame
-            if(renderItem(frame, 'Framed Photo')) hasContent = true;
+    function showGallery() {
+        gallery.innerHTML = ""; // Bersihkan gallery
+        loadingScreen.style.display = 'none';
+        gallery.style.display = 'flex';
 
-            // 3. Tampilkan Semua Foto Satuan
-            raws.forEach((url, index) => {
-                if(renderItem(url, `Photo #${index + 1}`)) hasContent = true;
-            });
+        renderItem(gifUrl, 'Download GIF Animation');
+        renderItem(frameUrl, 'Download Framed Photo');
+        rawUrls.forEach((u, index) => {
+            renderItem(u, `Download Photo #${index + 1}`);
+        });
+    }
 
-            // Jika tidak ada data sama sekali
-            if (!hasContent) {
-                statusMsg.innerHTML = "<span style='color: #e74c3c;'>Foto tidak ditemukan atau sudah kedaluwarsa.</span>";
-            } else {
-                statusMsg.style.display = 'none';
-            }
-        };
+    function renderItem(url, label) {
+        const div = document.createElement('div');
+        div.className = 'item';
+        div.innerHTML = `
+            <img src="${url}" alt="${label}" onerror="this.src='https://via.placeholder.com/500x350?text=Sedang+Memproses...';">
+            <a href="${url}" target="_blank" download class="btn">${label}</a>
+        `;
+        gallery.appendChild(div);
+    }
+
+    // FUNGSI CEK KE SERVER
+    function checkServer() {
+        // Cek apakah file frame.png sudah ada di server GitHub
+        fetch(frameUrl, { method: 'HEAD', cache: 'no-store' })
+            .then(res => {
+                if (res.ok) {
+                    showGallery(); // Kalau ada, tampilkan!
+                } else {
+                    setTimeout(checkServer, 5000); // Kalau belum, cek lagi 5 detik
+                }
+            })
+            .catch(() => setTimeout(checkServer, 5000));
+    }
+
+    checkServer();
+};
     </script>
 </body>
 </html>
