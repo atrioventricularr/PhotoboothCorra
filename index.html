@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sesi Foto - Limited Time</title>
+    <style>
+        body { margin: 0; padding: 40px 20px; background: #fff; font-family: sans-serif; text-align: center; color: #2d3436; }
+        .container { max-width: 500px; margin: 0 auto; }
+        h1 { font-weight: 300; letter-spacing: 5px; text-transform: uppercase; border-bottom: 1px solid #eee; padding-bottom: 20px; }
+        .item { margin-bottom: 40px; }
+        img { width: 100%; border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        .btn { display: inline-block; margin-top: 15px; padding: 12px 30px; background: #000; color: #fff; text-decoration: none; font-size: 12px; font-weight: bold; border-radius: 4px; }
+        .timer { font-size: 11px; color: #e74c3c; margin-top: 10px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 id="brand">PHOTO SESSION</h1>
+        
+        <div id="gallery">
+            </div>
+
+        <div class="timer">⚠️ Link ini akan kedaluwarsa dalam 30 menit</div>
+        <p style="font-size: 10px; color: #aaa;">Segera simpan foto kamu sebelum terhapus otomatis.</p>
+    </div>
+
+    <script>
+        window.onload = () => {
+            const params = new URLSearchParams(window.location.search);
+            const frame = params.get('frame');
+            const gif = params.get('gif');
+            const brand = params.get('brand');
+            const gallery = document.getElementById('gallery');
+
+            if (brand) document.getElementById('brand').innerText = brand.toUpperCase();
+
+            const items = [ {url: gif, label: 'Download GIF'}, {url: frame, label: 'Download Photo'} ];
+
+            items.forEach(item => {
+                if (item.url) {
+                    const div = document.createElement('div');
+                    div.className = 'item';
+                    div.innerHTML = `
+                        <img src="${item.url}" onerror="this.parentElement.innerHTML='<p>Foto sudah kedaluwarsa/terhapus</p>'">
+                        <a href="${item.url}" target="_blank" class="btn">${item.label}</a>
+                    `;
+                    gallery.appendChild(div);
+                }
+            });
+        };
+    </script>
+</body>
+</html>
