@@ -3,174 +3,111 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Corra Photobooth - Download Session</title>
+    <title>Corra Photobooth - Download</title>
     <style>
-        body { 
-            margin: 0; 
-            padding: 40px 20px; 
-            background: #ffffff; 
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
-            text-align: center; 
-            color: #2d3436; 
-        }
+        body { margin: 0; padding: 40px 20px; background: #ffffff; font-family: 'Segoe UI', sans-serif; text-align: center; color: #2d3436; }
         .container { max-width: 600px; margin: 0 auto; }
+        h1 { font-weight: 300; letter-spacing: 4px; text-transform: uppercase; border-bottom: 1px solid #eee; padding-bottom: 20px; font-size: 22px; margin-bottom: 30px;}
         
-        h1 { 
-            font-weight: 300; 
-            letter-spacing: 4px; 
-            text-transform: uppercase; 
-            border-bottom: 1px solid #eee; 
-            padding-bottom: 20px; 
-            margin-bottom: 40px;
-            font-size: 24px;
-        }
-
-        .gallery-grid {
-            display: flex;
-            flex-direction: column;
-            gap: 40px;
-        }
-
-        .item { 
-            background: #fff;
-            padding: 10px;
-            border-radius: 12px;
-        }
-
-        img { 
-            width: 100%; 
-            height: auto;
-            border-radius: 8px; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.08); 
-            margin-bottom: 15px; 
-            display: block;
-        }
-
-        .btn { 
-            display: inline-block; 
-            padding: 14px 30px; 
-            background: #1a1a1a; 
-            color: #ffffff; 
-            text-decoration: none; 
-            font-size: 12px; 
-            font-weight: 600; 
-            border-radius: 50px; 
-            text-transform: uppercase; 
-            letter-spacing: 1px;
-            transition: transform 0.2s;
-        }
+        .loading-box { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 200px; }
+        .spinner { border: 3px solid #f3f3f3; border-top: 3px solid #2d3436; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin-bottom: 15px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
-        .btn:active { transform: scale(0.95); }
-
-        .timer-box { 
-            background: #fffafa; 
-            border: 1px solid #ffebeb; 
-            padding: 20px; 
-            border-radius: 15px; 
-            margin-top: 60px; 
-        }
-
-        .timer-label { 
-            font-size: 11px; 
-            color: #e74c3c; 
-            font-weight: bold; 
-            text-transform: uppercase; 
-            letter-spacing: 1px; 
-            display: block;
-            margin-bottom: 5px;
-        }
-
-        .footer-text { font-size: 11px; color: #a0aec0; margin-top: 20px; }
+        .gallery-grid { display: none; flex-direction: column; gap: 30px; margin-top: 20px; }
+        .item { background: #fff; border: 1px solid #eee; padding: 10px; border-radius: 12px; }
+        img { width: 100%; height: auto; border-radius: 8px; margin-bottom: 15px; display: block; background: #f9f9f9; }
         
-        /* Loading state */
-        #status-msg { color: #a0aec0; font-style: italic; }
+        .btn { display: inline-block; padding: 12px 25px; background: #1a1a1a; color: #ffffff; text-decoration: none; font-size: 11px; font-weight: 600; border-radius: 50px; text-transform: uppercase; letter-spacing: 1px; }
+        .footer-text { font-size: 10px; color: #cbd5e0; margin-top: 50px; }
     </style>
 </head>
 <body>
     <div class="container">
         <h1 id="brand-title">PHOTO SESSION</h1>
         
-        <div id="gallery" class="gallery-grid">
-            <p id="status-msg">Memuat foto-foto kamu...</p>
+        <div id="loading-area" class="loading-box">
+            <div class="spinner"></div>
+            <div id="status-text" style="font-size: 13px; font-weight: bold;">Menunggu Server GitHub...</div>
+            <div style="font-size: 11px; color: #a0aec0; margin-top: 8px; line-height: 1.5;">
+                Foto kamu sedang diproses oleh GitHub Pages.<br>Akan muncul otomatis dalam hitungan detik.
+            </div>
         </div>
 
-        <div class="timer-box">
-            <span class="timer-label">⚠️ Link Berlaku 30 Menit</span>
-            <p style="font-size: 12px; color: #4a5568; margin: 5px 0 0 0;">
-                Segera simpan foto ke galeri HP sebelum terhapus otomatis.
-            </p>
-        </div>
+        <div id="gallery" class="gallery-grid"></div>
 
         <p class="footer-text">© 2026 Corra Studio. All rights reserved.</p>
     </div>
 
     <script>
-       window.onload = () => {
-    const params = new URLSearchParams(window.location.search);
-    const sid = params.get('sid');
-    const brand = params.get('brand');
-    const rawsCount = parseInt(params.get('raws') || "0");
+        window.onload = () => {
+            const params = new URLSearchParams(window.location.search);
+            const sid = params.get('sid');
+            const brand = params.get('brand');
+            const rawsCount = parseInt(params.get('raws') || "0");
 
-    if (brand) document.getElementById('brand-title').innerText = decodeURIComponent(brand).toUpperCase();
+            if (brand) document.getElementById('brand-title').innerText = decodeURIComponent(brand).toUpperCase();
+            
+            if (!sid) {
+                document.getElementById('loading-area').innerHTML = "Scan QR Code untuk melihat foto.";
+                return;
+            }
 
-    // JIKA TIDAK ADA SID (Seperti di screenshot kamu)
-    if (!sid) {
-        document.getElementById('loading-screen').innerHTML = "<p style='color:#e74c3c;'>Harap scan QR Code dari aplikasi Photobooth untuk melihat foto.</p>";
-        return;
-    }
+            // PENTING: Membuat link absolut agar tidak tersesat
+            const repoName = "PhotoboothCorra";
+            const userName = "atrioventricularr";
+            const rawBaseUrl = `https://${userName}.github.io/${repoName}/sessions/${sid}/`;
 
-    // CARA AMAN MENDAPATKAN BASE URL
-    const baseUrl = window.location.origin + window.location.pathname.replace('index.html', '');
-    
-    // Alamat gambar
-    const frameUrl = `${baseUrl}sessions/${sid}/frame.png`;
-    const gifUrl = `${baseUrl}sessions/${sid}/gif.gif`;
-    const rawUrls = [];
-    for(let i=1; i<=rawsCount; i++) {
-        rawUrls.push(`${baseUrl}sessions/${sid}/raw-${i}.png`);
-    }
+            const loadingArea = document.getElementById('loading-area');
+            const gallery = document.getElementById('gallery');
+            const statusText = document.getElementById('status-text');
 
-    const loadingScreen = document.getElementById('loading-screen');
-    const gallery = document.getElementById('gallery');
-
-    function showGallery() {
-        gallery.innerHTML = ""; // Bersihkan gallery
-        loadingScreen.style.display = 'none';
-        gallery.style.display = 'flex';
-
-        renderItem(gifUrl, 'Download GIF Animation');
-        renderItem(frameUrl, 'Download Framed Photo');
-        rawUrls.forEach((u, index) => {
-            renderItem(u, `Download Photo #${index + 1}`);
-        });
-    }
-
-    function renderItem(url, label) {
-        const div = document.createElement('div');
-        div.className = 'item';
-        div.innerHTML = `
-            <img src="${url}" alt="${label}" onerror="this.src='https://via.placeholder.com/500x350?text=Sedang+Memproses...';">
-            <a href="${url}" target="_blank" download class="btn">${label}</a>
-        `;
-        gallery.appendChild(div);
-    }
-
-    // FUNGSI CEK KE SERVER
-    function checkServer() {
-        // Cek apakah file frame.png sudah ada di server GitHub
-        fetch(frameUrl, { method: 'HEAD', cache: 'no-store' })
-            .then(res => {
-                if (res.ok) {
-                    showGallery(); // Kalau ada, tampilkan!
-                } else {
-                    setTimeout(checkServer, 5000); // Kalau belum, cek lagi 5 detik
+            function render() {
+                gallery.innerHTML = "";
+                // Render GIF
+                addItem(rawBaseUrl + "gif.gif", "Download GIF");
+                // Render Frame
+                addItem(rawBaseUrl + "frame.png", "Download Framed Photo");
+                // Render Raws
+                for(let i=1; i<=rawsCount; i++) {
+                    addItem(`${rawBaseUrl}raw-${i}.png`, `Download Photo #${i}`);
                 }
-            })
-            .catch(() => setTimeout(checkServer, 5000));
-    }
+                
+                loadingArea.style.display = 'none';
+                gallery.style.display = 'flex';
+            }
 
-    checkServer();
-};
+            function addItem(url, label) {
+                const div = document.createElement('div');
+                div.className = 'item';
+                div.innerHTML = `
+                    <img src="${url}" onerror="this.src='https://via.placeholder.com/500x350/f9f9f9/a0aec0?text=Sabar...++Sedang+Loading'">
+                    <a href="${url}" target="_blank" download class="btn">${label}</a>
+                `;
+                gallery.appendChild(div);
+            }
+
+            let attempts = 0;
+            function checkExistence() {
+                attempts++;
+                statusText.innerText = `Mengecek server... (Percobaan ${attempts})`;
+
+                // Mencoba memanggil file frame.png
+                fetch(rawBaseUrl + "frame.png", { method: 'HEAD', cache: 'no-store' })
+                .then(res => {
+                    if (res.ok) {
+                        render();
+                    } else {
+                        // Jika 404 (Belum ada), tunggu 5 detik lalu cek lagi
+                        setTimeout(checkExistence, 5000);
+                    }
+                })
+                .catch(() => {
+                    setTimeout(checkExistence, 5000);
+                });
+            }
+
+            checkExistence();
+        };
     </script>
 </body>
 </html>
